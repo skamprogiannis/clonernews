@@ -1,0 +1,229 @@
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+
+}
+
+body {
+  min-height:100vh;
+}
+#head {
+  align-items: center;
+  height: 450px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;	
+  
+  background: linear-gradient(135deg, #16171b 0%, #070708 100%);
+  box-shadow: inset 0 1px 0px rgba(255, 255, 255, 0.15), 
+              0 10px 30px rgba(0, 0, 0, 0.7);
+          
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+
+#top{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+#header {
+  font-size: 70px;
+  margin-left: 40px;
+  text-transform: uppercase;
+  background: linear-gradient(to right, #ff6b00, #ffffff);
+  background-clip: text;
+  -webkit-background-clip: text; 
+  color: transparent; 
+}
+
+#com {
+  font-size: 20px;
+  margin-left: 80px;
+  background: linear-gradient(to right, #ff6b00, #ffffff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+#com2 {
+  font-size: 32px;
+  width: 350px;
+  
+  margin-right: 120px; 
+  line-height: 1.3;
+  text-align: right;
+  position: relative; 
+  background: linear-gradient(135deg, #ffffff 0%, #a6afb8 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+
+#com2::before {
+  content: "";
+  position: absolute;
+  right: -90px;          
+  top: 50%;             
+  transform: translateY(-50%); 
+  
+  width: 70px;           
+  height: 4px;           
+  background: linear-gradient(to right, #ff6b00, rgba(255, 107, 0, 0)); 
+  border-radius: 2px;    
+}
+#line{
+   background: radial-gradient(circle, #ff6b00, rgba(255, 107, 0, 0));
+  display:flex;
+	height:1px;
+}
+#menu {
+  background: linear-gradient(135deg, #16171b 0%, #070708 100%);
+  display: flex;
+  width: 100%;           
+}
+
+#menu ul {
+  list-style: none;
+  display: flex;
+  gap: 20px;      
+  padding: 0;
+  width: 100%;            
+  justify-content: center; 
+  align-items: center;    
+  height: 60px;           
+}
+
+#menu ul li a {
+  /* Αφαιρέσαμε το justify-content από εδώ, δεν χρειαζόταν */
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  background-image: linear-gradient(to right, transparent, #ff6b00, transparent);
+  background-size: 0% 1px;
+  padding: 10px;
+  background-position: center bottom;
+  transition: 0.3s ease; 
+  background-repeat: no-repeat;
+}
+
+#menu ul li a:hover {
+  color: rgba(255,255,255,0.9);
+  background-size: 100% 1px;
+}
+
+#main{
+  background: linear-gradient(135deg, #16171b 0%, #070708 100%);
+height:1000px;
+
+}
+#info {
+  width: 100%;
+  display: flex;
+  padding: 20px 40px;
+  justify-content: space-between; 
+  align-items: center;            
+}
+
+
+#live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: green;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
+  animation: pulse 2s infinite; 
+}
+
+/* Το κείμενο δίπλα από το φωτάκι */
+.live-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(255, 107, 0, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
+  }
+}
+#inp{
+  border-radius:14px;
+  height:30px;	
+  width:300px;
+  display:flex;
+  border:none;
+  padding:10px;
+  background:rgba(255,255,255,0.2);
+
+
+}
+#inp:focus{
+  background:rgba(255,255,255,0.3);
+  border:none;
+  outline:none;
+}
+
+#filters {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  padding: 30px 0;
+}
+
+.filter-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+
+.filter-btn:hover {
+  color: #ffffff;
+  border-color: rgba(255, 107, 0, 0.4);
+  background: rgba(255, 107, 0, 0.05);
+}
+
+
+.filter-btn.active {
+  color: #ffffff;
+  background: rgba(255, 107, 0, 0.2); 
+  border-color: #ff6b00;
+   box-shadow: 0 4px 20px rgba(255, 107, 0, 0.15)
+}

@@ -19,47 +19,42 @@
   </div>
   <div id="line"></div>
 
- 
   <nav id="menu">
     <ul>
       <li><a href="#">Home</a></li>
-      <li><a href="#">News</a></li>
       <li><a href="#">About us</a></li>
-      <li><a href="#">Contact</a></li>
     </ul>
   </nav>
 
-  
   <main id="main">
     
-    
- <div id="info">
-  <input type="text" id="inp" placeholder="Search..." />
-  
- 
-  <div id="live-indicator">
-    <span class="pulse-dot"></span>
-    <span class="live-text">Live: Updates every 5s</span>
-  </div>
-</div>
-
-
-   
-    <div id="filters">
-      <button class="filter-btn active" data-type="stories">Stories</button>
-      <button class="filter-btn" data-type="jobs">Jobs</button>
-      <button class="filter-btn" data-type="polls">Polls</button>
+    <div id="info">
+      <input type="text" id="inp" placeholder="Search..." />
+      <div id="live-indicator">
+        <span class="pulse-dot"></span>
+        <span class="live-text">Live: Updates every 5s</span>
+      </div>
     </div>
 
-    
-    <div id="live-container"></div>
+    <div id="filter-buttons">
+      <button class="filter-btn active" data-type="story">Stories</button>
+      <button class="filter-btn" data-type="job">Jobs</button>
+      <button class="filter-btn" data-type="poll">Polls</button>
+    </div>
 
-    
-    <div id="posts-container"></div>
+    <div class="board-wrapper">
+      
+      <!-- Αριστερή Στήλη: Το Κύριο Feed -->
+      <div id="posts-container"></div>
+      
+      <div id="live-notification-area">
+        <div class="live-board-title">⚡ Real-Time Feed</div>
+      </div>
+
+    </div>
 
   </main>
 
-  
-  <script src="script.js"></script>
+  <script src="js/script.js"></script>
 </body>
 </html>

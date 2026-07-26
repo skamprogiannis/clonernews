@@ -32,6 +32,14 @@ async function fetchPostIds(type) {
   return response.json();
 }
 
+/**
+ * Fetches a Hacker News item, using the item cache unless a refresh is forced.
+ *
+ * @param {number} id - Hacker News item ID.
+ * @param {{ forceRefresh?: boolean }} [options={}] - Fetch options.
+ * @returns {Promise<object|null>} The item returned by the Hacker News API.
+ * @throws {Error} When the ID is missing or the request fails.
+ */
 async function fetchItemDetails(id, { forceRefresh = false } = {}) {
   if (!id && id !== 0) {
     throw new Error('fetchItemDetails requires an item ID');

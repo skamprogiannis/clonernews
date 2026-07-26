@@ -75,6 +75,15 @@ function showNotification(message) {
   }
 }
 
+/**
+ * Finds IDs inserted into or reordered within the current update snapshot.
+ *
+ * Compares the snapshots using their longest common subsequence (LCS).
+ *
+ * @param {number[]} previousIds - Previously processed update IDs.
+ * @param {number[]} currentIds - Current update IDs.
+ * @returns {number[]} Current IDs outside the snapshots' stable subsequence.
+ */
 function findChangedUpdateIds(previousIds, currentIds) {
   const lcsLengths = Array.from(
     { length: previousIds.length + 1 },
@@ -131,6 +140,17 @@ function findChangedUpdateIds(previousIds, currentIds) {
   return currentIds.filter((id) => !stableIds.has(id));
 }
 
+/**
+ * Refreshes changed items already held in loadedPosts.
+ *
+ * Refreshes bypass itemCache. The loaded objects are mutated in place only
+ * after every refresh succeeds.
+ *
+ * @param {number[]} changedIds - IDs that may have changed.
+ * @returns {Promise<{ changedPosts: object[], refreshedPosts: object[] }>}
+ *   Actually changed posts and every successfully refreshed post.
+ * @throws {Error} When any changed loaded item cannot be refreshed.
+ */
 async function refreshChangedLoadedPosts(changedIds) {
   const loadedPostsById = new Map(
     loadedPosts
@@ -208,6 +228,16 @@ function createLiveUpdateMessage(changedIds, refreshedPosts) {
   return message;
 }
 
+/**
+ * Checks Hacker News for live item changes and updates loaded post state.
+ *
+ * The first valid response becomes a silent baseline. Overlapping checks are
+ * ignored, and failures preserve the previous baseline so the change can be
+ * retried. Errors are handled internally by marking live updates unavailable
+ * and logging once per outage.
+ *
+ * @returns {Promise<void>}
+ */
 async function checkForNewData() {
   if (liveUpdateCheckInProgress) {
     return;

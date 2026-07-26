@@ -1,5 +1,22 @@
 const LIVE_UPDATE_INTERVAL_MS = 5000;
 const MAX_LIVE_NOTIFICATIONS = 5;
+const LIVE_ITEM_FIELDS = [
+  'by',
+  'dead',
+  'deleted',
+  'descendants',
+  'id',
+  'kids',
+  'parent',
+  'parts',
+  'poll',
+  'score',
+  'text',
+  'time',
+  'title',
+  'type',
+  'url',
+];
 
 let previousLiveUpdateIds = null;
 let liveUpdateCheckInProgress = false;
@@ -62,34 +79,59 @@ async function refreshChangedLoadedPosts(changedIds) {
   const loadedChangedIds = changedIds.filter((id) =>
     loadedPostsById.has(id),
   );
-  const refreshResults = await Promise.allSettled(
+  const refreshResults = await Promise.all(
     loadedChangedIds.map(async (id) => {
       const freshPost = await fetchItemDetails(id, {
         forceRefresh: true,
       });
       const loadedPost = loadedPostsById.get(id);
 
-      if (freshPost && loadedPost) {
-        Object.assign(loadedPost, freshPost);
+      if (!freshPost || !loadedPost) {
+        throw new Error(`Unable to refresh changed item ${id}`);
       }
 
-      return freshPost;
+      const didChange = LIVE_ITEM_FIELDS.some((field) => {
+        const loadedValue = loadedPost[field];
+        const freshValue = freshPost[field];
+
+        if (Array.isArray(loadedValue) || Array.isArray(freshValue)) {
+          return (
+            !Array.isArray(loadedValue) ||
+            !Array.isArray(freshValue) ||
+            loadedValue.length !== freshValue.length ||
+            loadedValue.some((value, index) => value !== freshValue[index])
+          );
+        }
+
+        return loadedValue !== freshValue;
+      });
+
+      Object.assign(loadedPost, freshPost);
+
+      return { didChange, post: freshPost };
     }),
   );
 
-  return refreshResults
-    .filter((result) => result.status === 'fulfilled' && result.value)
-    .map((result) => result.value);
+  return {
+    changedPosts: refreshResults
+      .filter((result) => result.didChange)
+      .map((result) => result.post),
+    refreshedPosts: refreshResults.map((result) => result.post),
+  };
 }
 
 function createLiveUpdateMessage(changedIds, refreshedPosts) {
-  const itemLabel = changedIds.length === 1 ? 'item' : 'items';
   const titles = refreshedPosts
     .map((post) => post.title)
     .filter((title) => typeof title === 'string' && title.trim())
     .slice(0, 3);
-  let message =
-    `Hacker News updated: ${changedIds.length} ${itemLabel} changed.`;
+  let message = 'Hacker News live data changed.';
+
+  if (changedIds.length > 0) {
+    const itemLabel = changedIds.length === 1 ? 'item' : 'items';
+    message =
+      `Hacker News updated: ${changedIds.length} ${itemLabel} changed.`;
+  }
 
   if (titles.length > 0) {
     message += ` Updated on screen: ${titles.join(', ')}.`;
@@ -120,30 +162,56 @@ async function checkForNewData() {
       throw new Error('Live updates response did not include an items array');
     }
 
-    liveUpdateErrorReported = false;
+    if (
+      !updates.items.every(
+        (id) => Number.isInteger(id) && id > 0,
+      )
+    ) {
+      throw new Error('Live updates response included an invalid item ID');
+    }
 
-    const currentUpdateIds = new Set(
-      updates.items.filter(Number.isInteger),
-    );
-
-    setLiveIndicator(true);
+    const currentUpdateIds = [...updates.items];
 
     if (previousLiveUpdateIds === null) {
       previousLiveUpdateIds = currentUpdateIds;
+      liveUpdateErrorReported = false;
+      setLiveIndicator(true);
       return;
     }
 
-    const changedIds = [...currentUpdateIds].filter(
-      (id) => !previousLiveUpdateIds.has(id),
+    const previousUpdateIdSet = new Set(previousLiveUpdateIds);
+    const addedIds = currentUpdateIds.filter(
+      (id) => !previousUpdateIdSet.has(id),
     );
-    previousLiveUpdateIds = currentUpdateIds;
+    const didSnapshotChange =
+      currentUpdateIds.length !== previousLiveUpdateIds.length ||
+      currentUpdateIds.some(
+        (id, index) => id !== previousLiveUpdateIds[index],
+      );
+    const { changedPosts, refreshedPosts } =
+      await refreshChangedLoadedPosts(currentUpdateIds);
 
-    if (changedIds.length === 0) {
+    if (!didSnapshotChange && changedPosts.length === 0) {
+      liveUpdateErrorReported = false;
+      setLiveIndicator(true);
       return;
     }
 
-    const refreshedPosts = await refreshChangedLoadedPosts(changedIds);
-    showNotification(createLiveUpdateMessage(changedIds, refreshedPosts));
+    const postsToName =
+      addedIds.length > 0
+        ? refreshedPosts.filter(
+            (post) =>
+              addedIds.includes(post.id) ||
+              changedPosts.some(
+                (changedPost) => changedPost.id === post.id,
+              ),
+          )
+        : changedPosts;
+
+    showNotification(createLiveUpdateMessage(addedIds, postsToName));
+    previousLiveUpdateIds = currentUpdateIds;
+    liveUpdateErrorReported = false;
+    setLiveIndicator(true);
   } catch (error) {
     setLiveIndicator(false);
 

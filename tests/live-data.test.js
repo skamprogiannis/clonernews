@@ -9,6 +9,14 @@ const scriptSource = fs.readFileSync(
   'utf8',
 );
 
+function successfulJsonResponse(payload) {
+  return {
+    ok: true,
+    status: 200,
+    json: async () => payload,
+  };
+}
+
 class FakeClassList {
   constructor() {
     this.values = new Set();
@@ -159,11 +167,7 @@ test('force refresh bypasses and replaces the cached item', async () => {
     const item = responses[requestCount];
     requestCount += 1;
 
-    return {
-      ok: true,
-      status: 200,
-      json: async () => ({ ...item }),
-    };
+    return successfulJsonResponse({ ...item });
   });
 
   const original = await context.fetchItemDetails(123);
@@ -193,11 +197,7 @@ test('the initial live check is silent and a later change is announced once', as
     const response = updateResponses[responseIndex];
     responseIndex += 1;
 
-    return {
-      ok: true,
-      status: 200,
-      json: async () => response,
-    };
+    return successfulJsonResponse(response);
   });
 
   await context.checkForNewData();
@@ -231,22 +231,14 @@ test('a changed loaded post is force-refreshed and named in the notification', a
       const response = updateResponses[updateResponseIndex];
       updateResponseIndex += 1;
 
-      return {
-        ok: true,
-        status: 200,
-        json: async () => response,
-      };
+      return successfulJsonResponse(response);
     }
 
     assert.match(url, /\/item\/201\.json$/);
     const response = itemResponses[itemResponseIndex];
     itemResponseIndex += 1;
 
-    return {
-      ok: true,
-      status: 200,
-      json: async () => ({ ...response }),
-    };
+    return successfulJsonResponse({ ...response });
   });
 
   const loadedPost = { id: 201, score: 10, title: 'Cached title' };
@@ -318,6 +310,10 @@ test('live notifications include offline and reduced-motion styles', () => {
   assert.match(css, /#live-notification-area/);
   assert.match(css, /\.live-notification\s*\{/);
   assert.match(css, /#live-indicator\.is-offline/);
+  assert.match(
+    css,
+    /@media \(max-width: 600px\)[\s\S]*\.live-notification[\s\S]*flex-direction: column/,
+  );
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
 
@@ -325,11 +321,7 @@ test('repeated live failures report once until a successful recovery', async () 
   const responses = [
     { ok: false, status: 503 },
     { ok: false, status: 503 },
-    {
-      ok: true,
-      status: 200,
-      json: async () => ({ items: [100], profiles: [] }),
-    },
+    successfulJsonResponse({ items: [100], profiles: [] }),
     { ok: false, status: 503 },
   ];
   const errors = [];
@@ -359,4 +351,149 @@ test('repeated live failures report once until a successful recovery', async () 
 
   await context.checkForNewData();
   assert.equal(errors.length, 2);
+});
+
+test('a loaded post changing within the same update snapshot is announced', async () => {
+  const itemResponses = [
+    { id: 201, score: 10, title: 'Before repeat update' },
+    { id: 201, score: 11, title: 'After repeat update' },
+  ];
+  let itemResponseIndex = 0;
+
+  const { context, document } = loadLiveData(async (url) => {
+    if (url.endsWith('/updates.json')) {
+      return successfulJsonResponse({
+        items: [201, 200],
+        profiles: [],
+      });
+    }
+
+    const response = itemResponses[itemResponseIndex];
+    itemResponseIndex += 1;
+    return successfulJsonResponse({ ...response });
+  });
+
+  const loadedPost = {
+    id: 201,
+    score: 10,
+    title: 'Before repeat update',
+  };
+  context.loadedPosts.push(loadedPost);
+  await context.fetchItemDetails(201);
+
+  await context.checkForNewData();
+  await context.checkForNewData();
+
+  assert.equal(itemResponseIndex, 2);
+  assert.equal(loadedPost.score, 11);
+  assert.equal(document.notificationArea.childElementCount, 1);
+  assert.match(
+    document.notificationArea.children[0].children[1].textContent,
+    /After repeat update/,
+  );
+});
+
+test('a failed loaded-post refresh preserves state and retries', async () => {
+  const updateResponses = [
+    { items: [200], profiles: [] },
+    { items: [201, 200], profiles: [] },
+    { items: [201, 200], profiles: [] },
+  ];
+  const errors = [];
+  let itemRequestCount = 0;
+  let updateResponseIndex = 0;
+
+  const { context, document } = loadLiveData(
+    async (url) => {
+      if (url.endsWith('/updates.json')) {
+        const response = updateResponses[updateResponseIndex];
+        updateResponseIndex += 1;
+        return successfulJsonResponse(response);
+      }
+
+      itemRequestCount += 1;
+
+      if (itemRequestCount === 1) {
+        throw new Error('Temporary item failure');
+      }
+
+      return successfulJsonResponse({
+        id: 201,
+        score: 15,
+        title: 'Recovered post',
+      });
+    },
+    {
+      consoleImplementation: {
+        error: (...args) => errors.push(args),
+      },
+    },
+  );
+
+  const loadedPost = { id: 201, score: 10, title: 'Stale post' };
+  context.loadedPosts.push(loadedPost);
+
+  await context.checkForNewData();
+  await context.checkForNewData();
+
+  assert.equal(document.notificationArea.childElementCount, 0);
+  assert.ok(document.liveIndicator.classList.contains('is-offline'));
+
+  await context.checkForNewData();
+
+  assert.equal(itemRequestCount, 2);
+  assert.equal(errors.length, 1);
+  assert.equal(loadedPost.title, 'Recovered post');
+  assert.equal(document.notificationArea.childElementCount, 1);
+  assert.ok(!document.liveIndicator.classList.contains('is-offline'));
+});
+
+test('a malformed update response does not replace the last valid snapshot', async () => {
+  const responses = [
+    { items: [100], profiles: [] },
+    { items: ['invalid'], profiles: [] },
+    { items: [100], profiles: [] },
+  ];
+  const errors = [];
+  let responseIndex = 0;
+
+  const { context, document } = loadLiveData(
+    async () => {
+      const response = responses[responseIndex];
+      responseIndex += 1;
+      return successfulJsonResponse(response);
+    },
+    {
+      consoleImplementation: {
+        error: (...args) => errors.push(args),
+      },
+    },
+  );
+
+  await context.checkForNewData();
+  await context.checkForNewData();
+  await context.checkForNewData();
+
+  assert.equal(errors.length, 1);
+  assert.equal(document.notificationArea.childElementCount, 0);
+});
+
+test('only the five newest live notifications remain visible', () => {
+  const { context, document } = loadLiveData(async () =>
+    successfulJsonResponse({ items: [], profiles: [] }),
+  );
+
+  for (let index = 1; index <= 6; index += 1) {
+    context.showNotification(`Update ${index}`);
+  }
+
+  assert.equal(document.notificationArea.childElementCount, 5);
+  assert.equal(
+    document.notificationArea.children[0].children[1].textContent,
+    'Update 6',
+  );
+  assert.equal(
+    document.notificationArea.children[4].children[1].textContent,
+    'Update 2',
+  );
 });

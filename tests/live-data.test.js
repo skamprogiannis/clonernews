@@ -353,19 +353,23 @@ test('repeated live failures report once until a successful recovery', async () 
   assert.equal(errors.length, 2);
 });
 
-test('a loaded post changing within the same update snapshot is announced', async () => {
+test('a loaded post changing when update IDs reorder is announced', async () => {
+  const updateResponses = [
+    { items: [200, 201], profiles: [] },
+    { items: [201, 200], profiles: [] },
+  ];
   const itemResponses = [
     { id: 201, score: 10, title: 'Before repeat update' },
     { id: 201, score: 11, title: 'After repeat update' },
   ];
   let itemResponseIndex = 0;
+  let updateResponseIndex = 0;
 
   const { context, document } = loadLiveData(async (url) => {
     if (url.endsWith('/updates.json')) {
-      return successfulJsonResponse({
-        items: [201, 200],
-        profiles: [],
-      });
+      const response = updateResponses[updateResponseIndex];
+      updateResponseIndex += 1;
+      return successfulJsonResponse(response);
     }
 
     const response = itemResponses[itemResponseIndex];
@@ -391,6 +395,39 @@ test('a loaded post changing within the same update snapshot is announced', asyn
     document.notificationArea.children[0].children[1].textContent,
     /After repeat update/,
   );
+});
+
+test('an unchanged update snapshot does not refetch loaded posts', async () => {
+  let itemRequestCount = 0;
+
+  const { context, document } = loadLiveData(async (url) => {
+    if (url.endsWith('/updates.json')) {
+      return successfulJsonResponse({
+        items: [201, 200],
+        profiles: [],
+      });
+    }
+
+    itemRequestCount += 1;
+    return successfulJsonResponse({
+      id: 201,
+      score: 10,
+      title: 'Unchanged post',
+    });
+  });
+
+  context.loadedPosts.push({
+    id: 201,
+    score: 10,
+    title: 'Unchanged post',
+  });
+  await context.fetchItemDetails(201);
+
+  await context.checkForNewData();
+  await context.checkForNewData();
+
+  assert.equal(itemRequestCount, 1);
+  assert.equal(document.notificationArea.childElementCount, 0);
 });
 
 test('a failed loaded-post refresh preserves state and retries', async () => {

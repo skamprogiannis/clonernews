@@ -34,7 +34,12 @@ function setLiveIndicator(isAvailable) {
   indicator.classList[isAvailable ? 'remove' : 'add']('is-offline');
   label.textContent = isAvailable
     ? 'Live: Updates every 5s'
-    : 'Live updates unavailable';
+      : 'Live updates unavailable';
+}
+
+function markLiveUpdatesAvailable() {
+  liveUpdateErrorReported = false;
+  setLiveIndicator(true);
 }
 
 function showNotification(message) {
@@ -174,8 +179,7 @@ async function checkForNewData() {
 
     if (previousLiveUpdateIds === null) {
       previousLiveUpdateIds = currentUpdateIds;
-      liveUpdateErrorReported = false;
-      setLiveIndicator(true);
+      markLiveUpdatesAvailable();
       return;
     }
 
@@ -188,14 +192,14 @@ async function checkForNewData() {
       currentUpdateIds.some(
         (id, index) => id !== previousLiveUpdateIds[index],
       );
-    const { changedPosts, refreshedPosts } =
-      await refreshChangedLoadedPosts(currentUpdateIds);
 
-    if (!didSnapshotChange && changedPosts.length === 0) {
-      liveUpdateErrorReported = false;
-      setLiveIndicator(true);
+    if (!didSnapshotChange) {
+      markLiveUpdatesAvailable();
       return;
     }
+
+    const { changedPosts, refreshedPosts } =
+      await refreshChangedLoadedPosts(currentUpdateIds);
 
     const postsToName =
       addedIds.length > 0
@@ -210,8 +214,7 @@ async function checkForNewData() {
 
     showNotification(createLiveUpdateMessage(addedIds, postsToName));
     previousLiveUpdateIds = currentUpdateIds;
-    liveUpdateErrorReported = false;
-    setLiveIndicator(true);
+    markLiveUpdatesAvailable();
   } catch (error) {
     setLiveIndicator(false);
 

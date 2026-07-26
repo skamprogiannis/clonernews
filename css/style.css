@@ -293,7 +293,7 @@ body {
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* --- ΔΕΞΙΑ ΣΤΗΛΗ: LIVE NOTIFICATION AREA (ΜΕΓΑΛΑ ΓΡΑΜΜΑΤΑ) --- */
+
 #live-notification-area {
   flex: 3;
   color: #ffffff;
@@ -308,7 +308,7 @@ body {
   overflow-y: auto; 
 }
 
-/* Scrollbar styling για το Live Feed */
+
 #live-notification-area::-webkit-scrollbar {
   width: 6px;
 }
@@ -323,7 +323,7 @@ body {
   background: rgba(255, 107, 0, 0.6);
 }
 
-/* Τίτλος του Live Board */
+
 .live-board-title {
   color: #ff6b00;
   font-size: 18px; 
@@ -334,7 +334,7 @@ body {
   padding-bottom: 10px;
 }
 
-/* Τα Live αντικείμενα (tickers) */
+
 .live-item-ticker {
   font-size: 16px; 
   line-height: 1.5;
@@ -347,7 +347,7 @@ body {
   animation: fadeInLive 0.5s ease-in-out;
 }
 
-/* Η ώρα λήψης μέσα στο live ticker */
+
 .live-item-ticker span {
   color: rgba(255, 255, 255, 0.45);
   font-size: 13px; 

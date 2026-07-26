@@ -76,7 +76,7 @@ function showNotification(message) {
 }
 
 function findChangedUpdateIds(previousIds, currentIds) {
-  const lengths = Array.from(
+  const lcsLengths = Array.from(
     { length: previousIds.length + 1 },
     () => Array(currentIds.length + 1).fill(0),
   );
@@ -95,12 +95,12 @@ function findChangedUpdateIds(previousIds, currentIds) {
         previousIds[previousIndex - 1] ===
         currentIds[currentIndex - 1]
       ) {
-        lengths[previousIndex][currentIndex] =
-          lengths[previousIndex - 1][currentIndex - 1] + 1;
+        lcsLengths[previousIndex][currentIndex] =
+          lcsLengths[previousIndex - 1][currentIndex - 1] + 1;
       } else {
-        lengths[previousIndex][currentIndex] = Math.max(
-          lengths[previousIndex - 1][currentIndex],
-          lengths[previousIndex][currentIndex - 1],
+        lcsLengths[previousIndex][currentIndex] = Math.max(
+          lcsLengths[previousIndex - 1][currentIndex],
+          lcsLengths[previousIndex][currentIndex - 1],
         );
       }
     }
@@ -119,8 +119,8 @@ function findChangedUpdateIds(previousIds, currentIds) {
       previousIndex -= 1;
       currentIndex -= 1;
     } else if (
-      lengths[previousIndex - 1][currentIndex] >=
-      lengths[previousIndex][currentIndex - 1]
+      lcsLengths[previousIndex - 1][currentIndex] >=
+      lcsLengths[previousIndex][currentIndex - 1]
     ) {
       previousIndex -= 1;
     } else {

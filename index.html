@@ -52,7 +52,12 @@
     </div>
 
     
-    <div id="live-container"></div>
+    <section
+      id="live-notification-area"
+      aria-label="Live Hacker News updates"
+      aria-live="polite"
+      aria-relevant="additions"
+    ></section>
 
     
     <div id="posts-container"></div>
@@ -60,6 +65,7 @@
   </main>
 
   
-  <script src="script.js"></script>
+  <script src="js/script.js"></script>
+  <script src="js/live-updates.js"></script>
 </body>
 </html>

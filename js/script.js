@@ -32,12 +32,12 @@ async function fetchPostIds(type) {
   return response.json();
 }
 
-async function fetchItemDetails(id) {
+async function fetchItemDetails(id, { forceRefresh = false } = {}) {
   if (!id && id !== 0) {
     throw new Error('fetchItemDetails requires an item ID');
   }
 
-  if (itemCache.has(id)) {
+  if (!forceRefresh && itemCache.has(id)) {
     return itemCache.get(id);
   }
 

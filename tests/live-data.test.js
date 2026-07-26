@@ -485,6 +485,45 @@ test('a failed loaded-post refresh preserves state and retries', async () => {
   assert.ok(!document.liveIndicator.classList.contains('is-offline'));
 });
 
+test('refreshing a loaded post removes API fields absent from fresh data', async () => {
+  const updateResponses = [
+    { items: [200], profiles: [] },
+    { items: [201, 200], profiles: [] },
+  ];
+  let updateResponseIndex = 0;
+
+  const { context } = loadLiveData(async (url) => {
+    if (url.endsWith('/updates.json')) {
+      const response = updateResponses[updateResponseIndex];
+      updateResponseIndex += 1;
+      return successfulJsonResponse(response);
+    }
+
+    return successfulJsonResponse({
+      deleted: true,
+      id: 201,
+      type: 'story',
+    });
+  });
+
+  const loadedPost = {
+    id: 201,
+    kids: [301],
+    score: 10,
+    title: 'Stale deleted title',
+    type: 'story',
+  };
+  context.loadedPosts.push(loadedPost);
+
+  await context.checkForNewData();
+  await context.checkForNewData();
+
+  assert.equal(loadedPost.deleted, true);
+  assert.ok(!Object.hasOwn(loadedPost, 'kids'));
+  assert.ok(!Object.hasOwn(loadedPost, 'score'));
+  assert.ok(!Object.hasOwn(loadedPost, 'title'));
+});
+
 test('a malformed update response does not replace the last valid snapshot', async () => {
   const responses = [
     { items: [100], profiles: [] },

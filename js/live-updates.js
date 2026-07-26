@@ -111,6 +111,11 @@ async function refreshChangedLoadedPosts(changedIds) {
         return loadedValue !== freshValue;
       });
 
+      LIVE_ITEM_FIELDS.forEach((field) => {
+        if (!Object.hasOwn(freshPost, field)) {
+          delete loadedPost[field];
+        }
+      });
       Object.assign(loadedPost, freshPost);
 
       return { didChange, post: freshPost };

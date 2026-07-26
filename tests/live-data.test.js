@@ -524,6 +524,44 @@ test('refreshing a loaded post removes API fields absent from fresh data', async
   assert.ok(!Object.hasOwn(loadedPost, 'title'));
 });
 
+test('the aggregate count includes new IDs and changed loaded posts', async () => {
+  const updateResponses = [
+    { items: [200, 202], profiles: [] },
+    { items: [201, 200, 202], profiles: [] },
+  ];
+  let updateResponseIndex = 0;
+
+  const { context, document } = loadLiveData(async (url) => {
+    if (url.endsWith('/updates.json')) {
+      const response = updateResponses[updateResponseIndex];
+      updateResponseIndex += 1;
+      return successfulJsonResponse(response);
+    }
+
+    return successfulJsonResponse({
+      id: 202,
+      score: 11,
+      title: 'Existing post changed',
+      type: 'story',
+    });
+  });
+
+  context.loadedPosts.push({
+    id: 202,
+    score: 10,
+    title: 'Existing post before change',
+    type: 'story',
+  });
+
+  await context.checkForNewData();
+  await context.checkForNewData();
+
+  assert.match(
+    document.notificationArea.children[0].children[1].textContent,
+    /2 items changed/,
+  );
+});
+
 test('a malformed update response does not replace the last valid snapshot', async () => {
   const responses = [
     { items: [100], profiles: [] },

@@ -216,8 +216,16 @@ async function checkForNewData() {
               ),
           )
         : changedPosts;
+    const reportedChangeIds = [
+      ...new Set([
+        ...addedIds,
+        ...changedPosts.map((post) => post.id),
+      ]),
+    ];
 
-    showNotification(createLiveUpdateMessage(addedIds, postsToName));
+    showNotification(
+      createLiveUpdateMessage(reportedChangeIds, postsToName),
+    );
     previousLiveUpdateIds = currentUpdateIds;
     markLiveUpdatesAvailable();
   } catch (error) {

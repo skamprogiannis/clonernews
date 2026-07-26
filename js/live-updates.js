@@ -75,6 +75,62 @@ function showNotification(message) {
   }
 }
 
+function findChangedUpdateIds(previousIds, currentIds) {
+  const lengths = Array.from(
+    { length: previousIds.length + 1 },
+    () => Array(currentIds.length + 1).fill(0),
+  );
+
+  for (
+    let previousIndex = 1;
+    previousIndex <= previousIds.length;
+    previousIndex += 1
+  ) {
+    for (
+      let currentIndex = 1;
+      currentIndex <= currentIds.length;
+      currentIndex += 1
+    ) {
+      if (
+        previousIds[previousIndex - 1] ===
+        currentIds[currentIndex - 1]
+      ) {
+        lengths[previousIndex][currentIndex] =
+          lengths[previousIndex - 1][currentIndex - 1] + 1;
+      } else {
+        lengths[previousIndex][currentIndex] = Math.max(
+          lengths[previousIndex - 1][currentIndex],
+          lengths[previousIndex][currentIndex - 1],
+        );
+      }
+    }
+  }
+
+  const stableIds = new Set();
+  let previousIndex = previousIds.length;
+  let currentIndex = currentIds.length;
+
+  while (previousIndex > 0 && currentIndex > 0) {
+    if (
+      previousIds[previousIndex - 1] ===
+      currentIds[currentIndex - 1]
+    ) {
+      stableIds.add(previousIds[previousIndex - 1]);
+      previousIndex -= 1;
+      currentIndex -= 1;
+    } else if (
+      lengths[previousIndex - 1][currentIndex] >=
+      lengths[previousIndex][currentIndex - 1]
+    ) {
+      previousIndex -= 1;
+    } else {
+      currentIndex -= 1;
+    }
+  }
+
+  return currentIds.filter((id) => !stableIds.has(id));
+}
+
 async function refreshChangedLoadedPosts(changedIds) {
   const loadedPostsById = new Map(
     loadedPosts
@@ -111,22 +167,24 @@ async function refreshChangedLoadedPosts(changedIds) {
         return loadedValue !== freshValue;
       });
 
-      LIVE_ITEM_FIELDS.forEach((field) => {
-        if (!Object.hasOwn(freshPost, field)) {
-          delete loadedPost[field];
-        }
-      });
-      Object.assign(loadedPost, freshPost);
-
-      return { didChange, post: freshPost };
+      return { didChange, freshPost, loadedPost };
     }),
   );
+
+  refreshResults.forEach(({ freshPost, loadedPost }) => {
+    LIVE_ITEM_FIELDS.forEach((field) => {
+      if (!Object.hasOwn(freshPost, field)) {
+        delete loadedPost[field];
+      }
+    });
+    Object.assign(loadedPost, freshPost);
+  });
 
   return {
     changedPosts: refreshResults
       .filter((result) => result.didChange)
-      .map((result) => result.post),
-    refreshedPosts: refreshResults.map((result) => result.post),
+      .map((result) => result.freshPost),
+    refreshedPosts: refreshResults.map((result) => result.freshPost),
   };
 }
 
@@ -203,8 +261,12 @@ async function checkForNewData() {
       return;
     }
 
+    const changedUpdateIds = findChangedUpdateIds(
+      previousLiveUpdateIds,
+      currentUpdateIds,
+    );
     const { changedPosts, refreshedPosts } =
-      await refreshChangedLoadedPosts(currentUpdateIds);
+      await refreshChangedLoadedPosts(changedUpdateIds);
 
     const postsToName =
       addedIds.length > 0

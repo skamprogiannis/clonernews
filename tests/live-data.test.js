@@ -485,6 +485,111 @@ test('a failed loaded-post refresh preserves state and retries', async () => {
   assert.ok(!document.liveIndicator.classList.contains('is-offline'));
 });
 
+test('a multi-post refresh applies no partial state before retry succeeds', async () => {
+  const updateResponses = [
+    { items: [200], profiles: [] },
+    { items: [201, 202, 200], profiles: [] },
+    { items: [201, 202, 200], profiles: [] },
+  ];
+  const itemAttempts = new Map();
+  let updateResponseIndex = 0;
+
+  const { context, document } = loadLiveData(
+    async (url) => {
+      if (url.endsWith('/updates.json')) {
+        const response = updateResponses[updateResponseIndex];
+        updateResponseIndex += 1;
+        return successfulJsonResponse(response);
+      }
+
+      const id = Number(url.match(/\/item\/(\d+)\.json$/)[1]);
+      const attempt = (itemAttempts.get(id) ?? 0) + 1;
+      itemAttempts.set(id, attempt);
+
+      if (id === 202 && attempt === 1) {
+        throw new Error('Second item failed');
+      }
+
+      return successfulJsonResponse({
+        id,
+        score: id === 201 ? 11 : 21,
+        title: `Fresh ${id}`,
+        type: 'story',
+      });
+    },
+    {
+      consoleImplementation: {
+        error() {},
+      },
+    },
+  );
+
+  const firstPost = {
+    id: 201,
+    score: 10,
+    title: 'Stale 201',
+    type: 'story',
+  };
+  const secondPost = {
+    id: 202,
+    score: 20,
+    title: 'Stale 202',
+    type: 'story',
+  };
+  context.loadedPosts.push(firstPost, secondPost);
+
+  await context.checkForNewData();
+  await context.checkForNewData();
+
+  assert.equal(firstPost.title, 'Stale 201');
+  assert.equal(secondPost.title, 'Stale 202');
+  assert.equal(document.notificationArea.childElementCount, 0);
+
+  await context.checkForNewData();
+
+  assert.equal(firstPost.title, 'Fresh 201');
+  assert.equal(secondPost.title, 'Fresh 202');
+  assert.equal(document.notificationArea.childElementCount, 1);
+});
+
+test('inserting one update ID does not refetch unchanged loaded posts', async () => {
+  const updateResponses = [
+    { items: [200, 201, 202], profiles: [] },
+    { items: [203, 200, 201, 202], profiles: [] },
+  ];
+  let itemRequestCount = 0;
+  let updateResponseIndex = 0;
+
+  const { context } = loadLiveData(
+    async (url) => {
+      if (url.endsWith('/updates.json')) {
+        const response = updateResponses[updateResponseIndex];
+        updateResponseIndex += 1;
+        return successfulJsonResponse(response);
+      }
+
+      itemRequestCount += 1;
+      return successfulJsonResponse(null);
+    },
+    {
+      consoleImplementation: {
+        error() {},
+      },
+    },
+  );
+
+  context.loadedPosts.push(
+    { id: 200, title: 'Post 200' },
+    { id: 201, title: 'Post 201' },
+    { id: 202, title: 'Post 202' },
+  );
+
+  await context.checkForNewData();
+  await context.checkForNewData();
+
+  assert.equal(itemRequestCount, 0);
+});
+
 test('refreshing a loaded post removes API fields absent from fresh data', async () => {
   const updateResponses = [
     { items: [200], profiles: [] },
@@ -527,7 +632,7 @@ test('refreshing a loaded post removes API fields absent from fresh data', async
 test('the aggregate count includes new IDs and changed loaded posts', async () => {
   const updateResponses = [
     { items: [200, 202], profiles: [] },
-    { items: [201, 200, 202], profiles: [] },
+    { items: [202, 201, 200], profiles: [] },
   ];
   let updateResponseIndex = 0;
 

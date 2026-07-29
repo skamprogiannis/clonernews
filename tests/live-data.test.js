@@ -184,6 +184,27 @@ test('force refresh bypasses and replaces the cached item', async () => {
   assert.equal(requestCount, 2);
 });
 
+test('poll IDs come from one targeted search request', async () => {
+  const requestedUrls = [];
+  const context = loadApiHelpers(async (url) => {
+    requestedUrls.push(url);
+
+    return successfulJsonResponse({
+      hits: [
+        { objectID: '300' },
+        { objectID: '200' },
+        { objectID: 'not-an-id' },
+      ],
+    });
+  });
+
+  const pollIds = await context.fetchPostIds('poll');
+
+  assert.deepEqual(Array.from(pollIds), [300, 200]);
+  assert.equal(requestedUrls.length, 1);
+  assert.match(requestedUrls[0], /search_by_date\?tags=poll/);
+});
+
 test('the initial live check is silent and a later change is announced once', async () => {
   const updateResponses = [
     { items: [100], profiles: [] },

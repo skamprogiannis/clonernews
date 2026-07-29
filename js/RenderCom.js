@@ -1,19 +1,35 @@
 function renderComments(comments, parentId) {
+  const container = document.getElementById(`comments-${parentId}`);
 
-    let com = document.getElementById(`comments-${parentId}`);
+  if (!container) {
+    return;
+  }
 
-    comments.forEach(comment => {
+  const newestFirst = comments
+    .filter(
+      (comment) =>
+        comment &&
+        comment.parent === parentId &&
+        !comment.dead &&
+        !comment.deleted,
+    )
+    .sort((first, second) => second.time - first.time);
 
-        const commentBox = document.createElement('div');
-        commentBox.className = 'comment-box';
+  container.replaceChildren();
 
+  newestFirst.forEach((comment) => {
+    const commentBox = document.createElement('article');
+    const author = document.createElement('div');
+    const text = document.createElement('div');
 
-        commentBox.innerHTML = `
-            <div class="comment-author">${comment.by || 'Anonymous'}</div>
-            <div class="comment-text">${comment.text}</div>
-        `;
+    commentBox.className = 'comment-box';
+    commentBox.dataset.commentId = String(comment.id);
+    author.className = 'comment-author';
+    author.textContent = comment.by || 'Anonymous';
+    text.className = 'comment-text';
+    text.innerHTML = comment.text || '';
 
-
-        com.appendChild(commentBox);
-    });
+    commentBox.append(author, text);
+    container.append(commentBox);
+  });
 }

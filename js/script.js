@@ -8,9 +8,9 @@ const POST_ENDPOINTS = {
   job: 'jobstories',
 };
 
-const POLL_SCAN_LIMIT = 500;
 const POLL_TARGET_COUNT = 30;
-const POLL_BATCH_SIZE = 25;
+const POLL_SEARCH_URL =
+  `https://hn.algolia.com/api/v1/search_by_date?tags=poll&hitsPerPage=${POLL_TARGET_COUNT}`;
 
 async function fetchPostIds(type) {
   // Fetches IDs for recent posts of the specified type
@@ -96,34 +96,17 @@ function throttle(func, limit) {
 }
 
 async function fetchRecentPollIds() {
-  // Fetches the most recent IDs for poll posts
-  const response = await fetch(`${BASE_URL}/maxitem.json`);
+  const response = await fetch(POLL_SEARCH_URL);
 
   if (!response.ok) {
-    throw new Error(`Unable to fetch latest item ID: ${response.status}`);
+    throw new Error(`Unable to fetch poll IDs: ${response.status}`);
   }
 
-  const maxItemId = await response.json();
-  const pollIds = [];
+  const data = await response.json();
 
-  for (
-    let firstId = maxItemId;
-    firstId > maxItemId - POLL_SCAN_LIMIT && pollIds.length < POLL_TARGET_COUNT;
-    firstId -= POLL_BATCH_SIZE
-  ) {
-    const ids = Array.from(
-      { length: POLL_BATCH_SIZE },
-      (_, index) => firstId - index,
-    ).filter((id) => id > 0);
-
-    const items = await Promise.all(ids.map((id) => fetchItemDetails(id)));
-
-    items.forEach((item) => {
-      if (item && item.type === 'poll') {
-        pollIds.push(item.id);
-      }
-    });
-  }
-
-  return pollIds;
+  return Array.isArray(data.hits)
+    ? data.hits
+        .map((hit) => Number(hit.objectID))
+        .filter((id) => Number.isInteger(id) && id > 0)
+    : [];
 }

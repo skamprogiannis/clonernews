@@ -2,40 +2,38 @@
   box-sizing:border-box;
   margin:0;
   padding:0;
-
 }
 
 body {
   min-height:100vh;
 }
+
 #head {
   align-items: center;
-  height: 450px;
+  height: 400px;
   display: flex;
   flex-direction: row;
-  justify-content: space-between;	
-  
+  justify-content: space-between;
   background: linear-gradient(135deg, #16171b 0%, #070708 100%);
-  box-shadow: inset 0 1px 0px rgba(255, 255, 255, 0.15), 
+  box-shadow: inset 0 1px 0px rgba(255, 255, 255, 0.15),
               0 10px 30px rgba(0, 0, 0, 0.7);
-          
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
-
 
 #top{
   display:flex;
   flex-direction:column;
   gap:5px;
 }
+
 #header {
   font-size: 70px;
   margin-left: 40px;
   text-transform: uppercase;
   background: linear-gradient(to right, #ff6b00, #ffffff);
   background-clip: text;
-  -webkit-background-clip: text; 
-  color: transparent; 
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
 #com {
@@ -50,11 +48,10 @@ body {
 #com2 {
   font-size: 32px;
   width: 350px;
-  
-  margin-right: 120px; 
+  margin-right: 120px;
   line-height: 1.3;
   text-align: right;
-  position: relative; 
+  position: relative;
   background: linear-gradient(135deg, #ffffff 0%, #a6afb8 100%);
   background-clip: text;
   -webkit-background-clip: text;
@@ -62,43 +59,42 @@ body {
   filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.5));
 }
 
-
 #com2::before {
   content: "";
   position: absolute;
-  right: -90px;          
-  top: 50%;             
-  transform: translateY(-50%); 
-  
-  width: 70px;           
-  height: 4px;           
-  background: linear-gradient(to right, #ff6b00, rgba(255, 107, 0, 0)); 
-  border-radius: 2px;    
+  right: -90px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 70px;
+  height: 4px;
+  background: linear-gradient(to right, #ff6b00, rgba(255, 107, 0, 0));
+  border-radius: 2px;
 }
+
 #line{
-   background: radial-gradient(circle, #ff6b00, rgba(255, 107, 0, 0));
+  background: radial-gradient(circle, #ff6b00, rgba(255, 107, 0, 0));
   display:flex;
-	height:1px;
+  height:1px;
 }
+
 #menu {
   background: linear-gradient(135deg, #16171b 0%, #070708 100%);
   display: flex;
-  width: 100%;           
+  width: 100%;
 }
 
 #menu ul {
   list-style: none;
   display: flex;
-  gap: 20px;      
+  gap: 20px;
   padding: 0;
-  width: 100%;            
-  justify-content: center; 
-  align-items: center;    
-  height: 60px;           
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  height: 60px;
 }
 
 #menu ul li a {
-  /* Αφαιρέσαμε το justify-content από εδώ, δεν χρειαζόταν */
   text-decoration: none;
   font-size: 16px;
   font-weight: 600;
@@ -109,7 +105,7 @@ body {
   background-size: 0% 1px;
   padding: 10px;
   background-position: center bottom;
-  transition: 0.3s ease; 
+  transition: 0.3s ease;
   background-repeat: no-repeat;
 }
 
@@ -120,17 +116,18 @@ body {
 
 #main{
   background: linear-gradient(135deg, #16171b 0%, #070708 100%);
-height:1000px;
-
+  min-height: 1000px;
+  height: auto;
+  padding-bottom: 40px;
 }
+
 #info {
   width: 100%;
   display: flex;
   padding: 20px 40px;
-  justify-content: space-between; 
-  align-items: center;            
+  justify-content: space-between;
+  align-items: center;
 }
-
 
 #live-indicator {
   display: flex;
@@ -142,17 +139,15 @@ height:1000px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-
 .pulse-dot {
   width: 8px;
   height: 8px;
   background-color: green;
   border-radius: 50%;
   box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
-  animation: pulse 2s infinite; 
+  animation: pulse 2s infinite;
 }
 
-/* Το κείμενο δίπλα από το φωτάκι */
 .live-text {
   color: rgba(255, 255, 255, 0.6);
   font-size: 12px;
@@ -161,39 +156,34 @@ height:1000px;
   letter-spacing: 0.5px;
 }
 
-
 @keyframes pulse {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(255, 107, 0, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
-  }
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 107, 0, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }
 }
+
 #inp{
   border-radius:14px;
-  height:30px;	
+  height:30px;
   width:300px;
   display:flex;
   border:none;
   padding:10px;
   background:rgba(255,255,255,0.2);
-
-
+  color: #ffffff;
 }
+
 #inp:focus{
   background:rgba(255,255,255,0.3);
   border:none;
   outline:none;
 }
 
-#filters {
+#inp::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+#filter-buttons {
   display: flex;
   justify-content: center;
   gap: 15px;
@@ -213,92 +203,271 @@ height:1000px;
   transition: all 0.3s ease;
 }
 
-
 .filter-btn:hover {
   color: #ffffff;
   border-color: rgba(255, 107, 0, 0.4);
   background: rgba(255, 107, 0, 0.05);
 }
 
-
 .filter-btn.active {
   color: #ffffff;
-  background: rgba(255, 107, 0, 0.2); 
+  background: rgba(255, 107, 0, 0.16);
   border-color: #ff6b00;
   box-shadow: 0 4px 20px rgba(255, 107, 0, 0.15);
 }
 
-#live-notification-area {
-  display: grid;
-  gap: 8px;
-  width: min(100%, 960px);
-  margin: 0 auto;
-  padding: 0 40px 24px;
-}
 
-.live-notification {
+.board-wrapper {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 12px 14px;
-  color: #f7f7f8;
-  background: #202126;
-  border: 1px solid rgba(255, 107, 0, 0.55);
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 40px;
+  gap: 40px;
+  align-items: flex-start;
+  margin-top: 35px;
+}
+
+/* Αριστερή Στήλη: Κύριο Feed */
+#posts-container {
+  flex: 7;
+  color: #ffffff;
+}
+
+
+.post-card {
+  margin-bottom: 30px;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
   border-radius: 10px;
-  animation: live-notification-in 180ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.live-notification__time {
-  flex: 0 0 auto;
-  color: #ff9348;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
+
+.post-card h2.post-title,
+.post-card .post-title a {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #ff6b00;
+  text-decoration: none;
 }
 
-.live-notification__message {
-  max-width: 70ch;
-  color: #f7f7f8;
-  font-size: 0.9rem;
-  line-height: 1.45;
+
+.post-card .post-meta {
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.65);
+  margin-top: 12px;
+  margin-bottom: 18px;
 }
 
-#live-indicator.is-offline .pulse-dot {
-  background-color: #f87171;
-  box-shadow: none;
-  animation: none;
+.post-card .post-meta strong {
+  color: #ffffff;
 }
 
-#live-indicator.is-offline .live-text {
-  color: #fecaca;
+
+.comments-section {
+  margin-top: 20px;
+  padding-left: 25px;
+
 }
 
-@keyframes live-notification-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.comment-box {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 15px 20px;
+  margin-top: 12px;
+  border-radius: 6px;
 }
 
-@media (max-width: 600px) {
-  #live-notification-area {
-    padding-inline: 16px;
-  }
 
-  .live-notification {
-    align-items: flex-start;
+.comment-author {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+
+.comment-text {
+  font-size: 18px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+
+#live-notification-area {
+  flex: 3;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 24px;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+
+#live-notification-area::-webkit-scrollbar {
+  width: 6px;
+}
+#live-notification-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+#live-notification-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 107, 0, 0.3);
+  border-radius: 3px;
+}
+#live-notification-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 0, 0.6);
+}
+
+
+.live-board-title {
+  color: #ff6b00;
+  font-size: 18px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 107, 0, 0.2);
+  padding-bottom: 10px;
+}
+
+
+.live-item-ticker {
+  font-size: 16px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 12px;
+  margin-top: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-left: 4px solid #ff6b00;
+  border-radius: 4px;
+  animation: fadeInLive 0.5s ease-in-out;
+}
+
+
+.live-item-ticker span {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  display: block;
+  margin-top: 6px;
+}
+
+@keyframes fadeInLive {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+
+
+@media screen and (max-width: 1024px) {
+  .board-wrapper {
     flex-direction: column;
-    gap: 4px;
+    padding: 0 20px;
+    gap: 20px;
+  }
+
+  #posts-container {
+    width: 100%;
+  }
+
+  #live-notification-area {
+    width: 100%;
+    position: static;
+    max-height: none;
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .pulse-dot,
-  .live-notification {
-    animation: none;
+
+@media screen and (max-width: 768px) {
+  #head {
+    height: auto;
+    flex-direction: column;
+    padding: 40px 20px;
+    text-align: center;
+    gap: 30px;
+  }
+
+  #top {
+    align-items: center;
+  }
+
+  #header {
+    font-size: 42px;
+    margin-left: 0;
+  }
+
+  #com {
+    font-size: 16px;
+    margin-left: 0;
+  }
+
+  #com2 {
+    font-size: 22px;
+    width: 100%;
+    margin-right: 0;
+    text-align: center;
+  }
+
+  #com2::before {
+    display: none;
+  }
+
+  #menu ul {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 15px;
+    gap: 10px;
+  }
+
+  #menu ul li a {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  #info {
+    flex-direction: column-reverse;
+    gap: 15px;
+    padding: 20px;
+  }
+
+  #inp {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  #filter-buttons {
+    flex-wrap: wrap;
+    padding: 20px;
+    gap: 10px;
+  }
+
+  .filter-btn {
+    padding: 8px 16px;
+    font-size: 12px;
+    flex: 1 1 calc(50% - 10px);
+    text-align: center;
+  }
+}
+
+
+@media screen and (max-width: 480px) {
+  #header {
+    font-size: 32px;
+  }
+
+  .post-card {
+    padding: 15px;
+  }
+
+  .post-card h2.post-title,
+  .post-card .post-title a {
+    font-size: 20px;
+  }
+
+  .comments-section {
+    padding-left: 10px;
   }
 }

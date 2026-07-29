@@ -19,53 +19,48 @@
   </div>
   <div id="line"></div>
 
- 
   <nav id="menu">
     <ul>
       <li><a href="#">Home</a></li>
-      <li><a href="#">News</a></li>
-      <li><a href="#">About us</a></li>
-      <li><a href="#">Contact</a></li>
+      <li><a href="about.html">About us</a></li>
     </ul>
   </nav>
 
-  
   <main id="main">
-    
-    
- <div id="info">
-  <input type="text" id="inp" placeholder="Search..." />
-  
- 
-  <div id="live-indicator">
-    <span class="pulse-dot"></span>
-    <span class="live-text">Live: Updates every 5s</span>
-  </div>
-</div>
-
-
-   
-    <div id="filters">
-      <button class="filter-btn active" data-type="stories">Stories</button>
-      <button class="filter-btn" data-type="jobs">Jobs</button>
-      <button class="filter-btn" data-type="polls">Polls</button>
+    <div id="info">
+      <div id="live-indicator">
+        <span class="pulse-dot"></span>
+        <span class="live-text">Live: Updates every 5s</span>
+      </div>
     </div>
 
-    
-    <section
-      id="live-notification-area"
-      aria-label="Live Hacker News updates"
-      aria-live="polite"
-      aria-relevant="additions"
-    ></section>
+    <div id="filter-buttons">
+      <button class="filter-btn active" data-type="story">Stories</button>
+      <button class="filter-btn" data-type="job">Jobs</button>
+      <button class="filter-btn" data-type="poll">Polls</button>
+    </div>
 
-    
-    <div id="posts-container"></div>
+    <div class="board-wrapper">
+      <div id="posts-container"></div>
 
+      <aside class="live-board" aria-labelledby="live-board-title">
+        <h2 class="live-board-title" id="live-board-title">
+          Real-Time Feed
+        </h2>
+        <section
+          id="live-notification-area"
+          aria-label="Live Hacker News updates"
+          aria-live="polite"
+          aria-relevant="additions"
+        ></section>
+      </aside>
+    </div>
   </main>
 
-  
   <script src="js/script.js"></script>
+  <script src="js/Render.js"></script>
+  <script src="js/RenderCom.js"></script>
+  <script src="js/Handle scroll.js"></script>
   <script src="js/live-updates.js"></script>
 </body>
 </html>

@@ -13,10 +13,13 @@ const POLL_TARGET_COUNT = 30;
 const POLL_BATCH_SIZE = 25;
 
 async function fetchPostIds(type) {
+  // Fetches IDs for recent posts of the specified type
   if (type === 'poll') {
+    // If the type is 'poll', fetch the most recent poll IDs
     return fetchRecentPollIds();
   }
 
+  // For other types, fetch the list of IDs from the API
   const endpoint = POST_ENDPOINTS[type];
 
   if (!endpoint) {
@@ -33,10 +36,12 @@ async function fetchPostIds(type) {
 }
 
 async function fetchItemDetails(id) {
+  // Fetches details of a specific item with the given ID
   if (!id && id !== 0) {
     throw new Error('fetchItemDetails requires an item ID');
   }
 
+  // If the item is already in the cache, return it
   if (itemCache.has(id)) {
     return itemCache.get(id);
   }
@@ -54,6 +59,7 @@ async function fetchItemDetails(id) {
 }
 
 function throttle(func, limit) {
+  // Throttles the execution of a function to ensure it doesn't exceed the specified limit
   let lastRun = 0;
   let timeoutId = null;
 
@@ -84,6 +90,7 @@ function throttle(func, limit) {
 }
 
 async function fetchRecentPollIds() {
+  // Fetches the most recent IDs for poll posts
   const response = await fetch(`${BASE_URL}/maxitem.json`);
 
   if (!response.ok) {

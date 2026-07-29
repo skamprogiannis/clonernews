@@ -4,7 +4,9 @@ var loadedPosts = [];
 const itemCache = new Map();
 
 const POST_ENDPOINTS = {
+  ask: 'askstories',
   story: 'newstories',
+  show: 'showstories',
   job: 'jobstories',
 };
 

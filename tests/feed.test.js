@@ -205,7 +205,7 @@ test('loadFeed renders only the first ten posts for the selected type', async ()
       return postIds;
     },
     loadedPosts,
-    renderPosts: (posts) => renderedBatches.push(posts),
+    renderPosts: (posts) => renderedBatches.push([...posts]),
     throttle: (callback) => callback,
     window: {
       addEventListener() {},
@@ -222,17 +222,22 @@ test('loadFeed renders only the first ten posts for the selected type', async ()
   assert.equal(loadedPosts.length, 10);
 });
 
-test('loadMorePosts appends the next ten posts without refetching the first batch', async () => {
+test('loadMorePosts keeps all loaded posts ordered without refetching', async () => {
   const renderedBatches = [];
   const requestedItems = [];
   const postIds = Array.from({ length: 25 }, (_, index) => index + 1);
   const { context } = loadScript('Handle scroll.js', {
     fetchItemDetails: async (id) => {
       requestedItems.push(id);
-      return { id, time: id, title: `Post ${id}`, type: 'story' };
+      return {
+        id,
+        time: id === 11 ? 100 : id,
+        title: `Post ${id}`,
+        type: 'story',
+      };
     },
     fetchPostIds: async () => postIds,
-    renderPosts: (posts) => renderedBatches.push(posts),
+    renderPosts: (posts) => renderedBatches.push([...posts]),
     throttle: (callback) => callback,
     window: {
       addEventListener() {},
@@ -247,8 +252,9 @@ test('loadMorePosts appends the next ten posts without refetching the first batc
   assert.deepEqual(requestedItems, postIds.slice(0, 20));
   assert.deepEqual(
     renderedBatches.map((batch) => batch.length),
-    [10, 10],
+    [10, 20],
   );
+  assert.equal(renderedBatches[1][0].id, 11);
 });
 
 test('initializeFeed loads Stories and connects each filter button', async () => {
@@ -441,5 +447,59 @@ test('opening a poll loads and displays its choices', async () => {
       .querySelector('.poll-options')
       .children.map((option) => option.dataset.pollOptionId),
     ['10', '11'],
+  );
+});
+
+test('a comment loads nested replies below the correct parent only once', async () => {
+  const requestedItems = [];
+  const document = createFakeDocument();
+  const commentsSection = document.createElement('section');
+
+  commentsSection.id = 'comments-42';
+  document.postsContainer.append(commentsSection);
+
+  const { context } = loadScript('RenderCom.js', {
+    document,
+    fetchItemDetails: async (id) => {
+      requestedItems.push(id);
+      return {
+        by: 'reply-author',
+        id,
+        parent: 1,
+        text: 'Nested reply',
+        time: 200,
+        type: 'comment',
+      };
+    },
+  });
+
+  context.renderComments(
+    [
+      {
+        by: 'parent-author',
+        id: 1,
+        kids: [2],
+        parent: 42,
+        text: 'Parent comment',
+        time: 100,
+        type: 'comment',
+      },
+    ],
+    42,
+  );
+
+  const parentComment = commentsSection.children[0];
+  const replyButton = parentComment.querySelector('.comment-toggle');
+
+  await replyButton.listeners.get('click')();
+  await replyButton.listeners.get('click')();
+  await replyButton.listeners.get('click')();
+
+  assert.deepEqual(requestedItems, [2]);
+  assert.deepEqual(
+    parentComment
+      .querySelector('.nested-comments')
+      .children.map((comment) => comment.dataset.commentId),
+    ['2'],
   );
 });

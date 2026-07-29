@@ -43,7 +43,9 @@ async function loadMorePosts(requestId = feedRequestId) {
 
     nextPostIndex += batchIds.length;
     loadedPosts.push(...posts);
-    renderPosts(posts);
+    loadedPosts.sort((first, second) => second.time - first.time);
+    document.getElementById('posts-container')?.replaceChildren();
+    renderPosts(loadedPosts);
     setFeedStatus(
       nextPostIndex >= activePostIds.length
         ? `All ${loadedPosts.length} ${activePostType} posts loaded.`

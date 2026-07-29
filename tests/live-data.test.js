@@ -205,6 +205,22 @@ test('poll IDs come from one targeted search request', async () => {
   assert.match(requestedUrls[0], /search_by_date\?tags=poll/);
 });
 
+test('Ask and Show feeds use their Hacker News endpoints', async () => {
+  const requestedUrls = [];
+  const context = loadApiHelpers(async (url) => {
+    requestedUrls.push(url);
+    return successfulJsonResponse([3, 2, 1]);
+  });
+
+  const askIds = await context.fetchPostIds('ask');
+  const showIds = await context.fetchPostIds('show');
+
+  assert.deepEqual(Array.from(askIds), [3, 2, 1]);
+  assert.deepEqual(Array.from(showIds), [3, 2, 1]);
+  assert.match(requestedUrls[0], /\/askstories\.json$/);
+  assert.match(requestedUrls[1], /\/showstories\.json$/);
+});
+
 test('the initial live check is silent and a later change is announced once', async () => {
   const updateResponses = [
     { items: [100], profiles: [] },

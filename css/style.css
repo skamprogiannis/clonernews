@@ -191,6 +191,7 @@ body {
 
 .filter-btn:focus-visible,
 .post-toggle:focus-visible,
+.comment-toggle:focus-visible,
 .post-source:focus-visible,
 #menu a:focus-visible {
   outline: 3px solid #ff9348;
@@ -338,6 +339,32 @@ body {
   font-size: 16px;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.comment-toggle {
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  color: #ffffff;
+  background: transparent;
+  border: 1px solid rgba(255, 147, 72, 0.7);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.comment-toggle:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.nested-comments {
+  margin-top: 8px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(255, 147, 72, 0.4);
+}
+
+.nested-comments[hidden] {
+  display: none;
 }
 
 .live-board {

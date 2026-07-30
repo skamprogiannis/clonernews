@@ -1,95 +1,44 @@
-# clonernews
+# Clownernews
 
-.
-##  Agreed Naming Conventions 
+Clownernews is a browser-based Hacker News client built with HTML, CSS, and
+vanilla JavaScript. It displays stories, jobs, polls, Ask HN, and Show HN posts
+in newest-first order.
 
-Everyone must use these identical names within their code modules:
-- `BASE_URL = ''` (Official API endpoint)
-- `loadedPosts` (Global JS array tracking posts currently rendered on screen)
-- Post types (Strings): `'story'`, `'job'`, `'poll'`
-- DOM Element IDs:
-  - `#live-notification-area` (The container for the 5-second live updates)
-  - `#posts-container` (The main feed container where post cards are appended)
-  - `#filter-buttons` (The UI filtering controls)
+The interface includes lazy-loaded feeds, comments and nested replies, poll
+choices, and notifications when Hacker News data changes. Post data comes from
+the Hacker News API, with Algolia Hacker News Search used to find recent polls.
 
----------------------------------------------------------------------------------
+## Poll discovery
 
-##  Roles & Function Allocation
+The official Hacker News API represents polls and poll options as items, but it
+does not provide an endpoint that lists recent polls. Discovering them only
+through the official API would require walking backward from `maxitem` and
+potentially making hundreds or thousands of item requests.
 
-###  Member 1: Integrator & Live Data
-**Responsibilities:** Project coordination, final code integration, and the Live Updates mechanism.
-**Functions to implement (JavaScript):**
-1. `function startLiveUpdateTimer()`
-   - **What it does:** Starts a tracker using `setInterval` that executes strictly every 5000ms (5 seconds).
-2. `async function checkForNewData()`
-   - **What it does:** Triggered by the timer, fetches the latest top ID from the API, compares it to our displayed state, and detects updates.
-3. `function showNotification(message)`
-   - **What it does:** Renders a visual alert banner inside `#live-notification-area` to notify the user of new content.
+To avoid unnecessary load, Clownernews makes one
+[Algolia Hacker News Search](https://hn.algolia.com/api) request to discover
+recent poll IDs. It then fetches and validates every displayed poll, poll
+option, and comment through the
+[official Hacker News API](https://github.com/HackerNews/API). Algolia is used
+only for discovery; the displayed item data still comes from Hacker News.
 
-----------------------------------------------------------------------------------
-###  Member 2: Frontend Developer (UI/UX & Events)
-**Responsibilities:** Page layout design, data rendering, and scroll event management (Lazy Loading).
-**Files to implement:** `index.html`, `style.css`
-**Functions to implement (JavaScript):**
-1. `function renderPosts(posts)`
-   - **What it does:** Receives an array of post objects, builds HTML card structures with appropriate CSS badges based on type, and appends them sorted (newest to oldest) into `#posts-container`.
-2. `function handleScrollEvent()`
-   - **What it does:** Monitors window scrolling; when the user nears the bottom, it triggers the loading of the next batch of 10 posts (Infinite Scroll).
-3. `function renderComments(comments, parentId)`
-   - **What it does:** Correctly structures and injects comment threads beneath the post matching the specified `parentId`.
--------------------------------------------------------------------------------
+## Run locally
 
-### Member 3: Backend Developer (API Integration & Optimization)
-**Responsibilities:** Interfacing with the HackerNews API, data formatting, and protecting against Rate Limiting.
-**Functions to implement (JavaScript):**
-1. `async function fetchPostIds(type)`
-   - **What it does:** Accepts a category string (`'story'`, `'job'`, `'poll'`), calls the respective API endpoint, and returns an array of item IDs.
-2. `async function fetchItemDetails(id)`
-   - **What it does:** Takes a single ID and returns an object containing the comprehensive details of that post or comment.
-3. `function throttle(func, limit)` or `debounce(func, delay)`
-   - **What it does:** A utility function that prevents API overload by capping execution frequency, specifically during rapid scrolling.
+The project has no build step or package dependencies. From the project
+directory, start a local web server:
 
------------------------------------------------------------------------------
-
-# HackerNews UI - JavaScript Function Skeletons
-
-```javascript
-async function fetchPostIds(type) {
-
-}
-
-async function fetchItemDetails(id) {
-
-}
-
-function throttle(func, limit) {
-
-}
-
-function renderPosts(posts) {
-
-}
-
-function handleScrollEvent() {
-
-}
-
-function renderComments(comments, parentId) {
-
-}
-
-function startLiveUpdateTimer() {
-
-}
-
-async function checkForNewData() {
-
-}
+```bash
+python3 -m http.server 8000
 ```
----------------------------------------------------------------------
 
+Then open [http://localhost:8000](http://localhost:8000) in a browser. An
+internet connection is required to load Hacker News data.
 
-##  Execution Milestones
-1. **Milestone 1:** Member 3 develops core fetch routines & Member 2 designs the static HTML/CSS layout.
-2. **Milestone 2:** Binding live API data to the UI, completing `renderPosts` and implementing Infinite Scroll (`handleScrollEvent`).
-3. **Milestone 3:** Integration of the 5-second Live Timer by Member 1, followed by comprehensive testing.
+## Run the tests
+
+The tests require Node.js:
+
+```bash
+node tests/feed.test.js
+node tests/live-data.test.js
+```

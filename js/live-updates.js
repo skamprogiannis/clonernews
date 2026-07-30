@@ -51,6 +51,8 @@ function showNotification(message) {
     return;
   }
 
+  document.getElementById('live-empty-state')?.remove();
+
   const notification = document.createElement('article');
   const timestamp = document.createElement('time');
   const text = document.createElement('p');
@@ -76,79 +78,18 @@ function showNotification(message) {
 }
 
 /**
- * Finds IDs inserted into or reordered within the current update snapshot.
- *
- * Compares the snapshots using their longest common subsequence (LCS).
- *
- * @param {number[]} previousIds - Previously processed update IDs.
- * @param {number[]} currentIds - Current update IDs.
- * @returns {number[]} Current IDs outside the snapshots' stable subsequence.
- */
-function findChangedUpdateIds(previousIds, currentIds) {
-  const lcsLengths = Array.from(
-    { length: previousIds.length + 1 },
-    () => Array(currentIds.length + 1).fill(0),
-  );
-
-  for (
-    let previousIndex = 1;
-    previousIndex <= previousIds.length;
-    previousIndex += 1
-  ) {
-    for (
-      let currentIndex = 1;
-      currentIndex <= currentIds.length;
-      currentIndex += 1
-    ) {
-      if (
-        previousIds[previousIndex - 1] ===
-        currentIds[currentIndex - 1]
-      ) {
-        lcsLengths[previousIndex][currentIndex] =
-          lcsLengths[previousIndex - 1][currentIndex - 1] + 1;
-      } else {
-        lcsLengths[previousIndex][currentIndex] = Math.max(
-          lcsLengths[previousIndex - 1][currentIndex],
-          lcsLengths[previousIndex][currentIndex - 1],
-        );
-      }
-    }
-  }
-
-  const stableIds = new Set();
-  let previousIndex = previousIds.length;
-  let currentIndex = currentIds.length;
-
-  while (previousIndex > 0 && currentIndex > 0) {
-    if (
-      previousIds[previousIndex - 1] ===
-      currentIds[currentIndex - 1]
-    ) {
-      stableIds.add(previousIds[previousIndex - 1]);
-      previousIndex -= 1;
-      currentIndex -= 1;
-    } else if (
-      lcsLengths[previousIndex - 1][currentIndex] >=
-      lcsLengths[previousIndex][currentIndex - 1]
-    ) {
-      previousIndex -= 1;
-    } else {
-      currentIndex -= 1;
-    }
-  }
-
-  return currentIds.filter((id) => !stableIds.has(id));
-}
-
-/**
  * Refreshes changed items already held in loadedPosts.
  *
  * Refreshes bypass itemCache. The loaded objects are mutated in place only
  * after every refresh succeeds.
  *
  * @param {number[]} changedIds - IDs that may have changed.
- * @returns {Promise<{ changedPosts: object[], refreshedPosts: object[] }>}
- *   Actually changed posts and every successfully refreshed post.
+ * @returns {Promise<Array<{
+ *   changedFields: string[],
+ *   freshPost: object,
+ *   loadedPost: object,
+ *   title: string
+ * }>>} Descriptions of posts that actually changed.
  * @throws {Error} When any changed loaded item cannot be refreshed.
  */
 async function refreshChangedLoadedPosts(changedIds) {
@@ -171,7 +112,7 @@ async function refreshChangedLoadedPosts(changedIds) {
         throw new Error(`Unable to refresh changed item ${id}`);
       }
 
-      const didChange = LIVE_ITEM_FIELDS.some((field) => {
+      const changedFields = LIVE_ITEM_FIELDS.filter((field) => {
         const loadedValue = loadedPost[field];
         const freshValue = freshPost[field];
 
@@ -187,7 +128,15 @@ async function refreshChangedLoadedPosts(changedIds) {
         return loadedValue !== freshValue;
       });
 
-      return { didChange, freshPost, loadedPost };
+      return {
+        changedFields,
+        freshPost,
+        loadedPost,
+        title:
+          freshPost.title ||
+          loadedPost.title ||
+          `Hacker News post ${freshPost.id}`,
+      };
     }),
   );
 
@@ -200,32 +149,74 @@ async function refreshChangedLoadedPosts(changedIds) {
     Object.assign(loadedPost, freshPost);
   });
 
-  return {
-    changedPosts: refreshResults
-      .filter((result) => result.didChange)
-      .map((result) => result.freshPost),
-    refreshedPosts: refreshResults.map((result) => result.freshPost),
-  };
+  return refreshResults.filter(
+    ({ changedFields }) => changedFields.length > 0,
+  );
 }
 
-function createLiveUpdateMessage(changedIds, refreshedPosts) {
-  const titles = refreshedPosts
-    .map((post) => post.title)
-    .filter((title) => typeof title === 'string' && title.trim())
-    .slice(0, 3);
-  let message = 'Hacker News live data changed.';
-
-  if (changedIds.length > 0) {
-    const itemLabel = changedIds.length === 1 ? 'item' : 'items';
-    message =
-      `Hacker News updated: ${changedIds.length} ${itemLabel} changed.`;
+function createLiveUpdateMessage({
+  changedFields,
+  freshPost,
+  title,
+}) {
+  if (freshPost.deleted) {
+    return `“${title}” was deleted.`;
   }
 
-  if (titles.length > 0) {
-    message += ` Updated on screen: ${titles.join(', ')}.`;
+  if (freshPost.dead) {
+    return `“${title}” is no longer active.`;
   }
 
-  return message;
+  const labels = [];
+  const specificallyDescribedFields = new Set([
+    'dead',
+    'deleted',
+    'descendants',
+    'kids',
+    'parts',
+    'score',
+  ]);
+
+  if (
+    changedFields.includes('kids') ||
+    changedFields.includes('descendants')
+  ) {
+    labels.push('comments');
+  }
+
+  if (changedFields.includes('score')) {
+    labels.push('score');
+  }
+
+  if (changedFields.includes('parts')) {
+    labels.push('poll choices');
+  }
+
+  if (
+    changedFields.some(
+      (field) => !specificallyDescribedFields.has(field),
+    )
+  ) {
+    labels.push('details');
+  }
+
+  if (labels.length === 0) {
+    return `“${title}” was updated.`;
+  }
+
+  let changeSummary = labels[0];
+
+  if (labels.length === 2) {
+    changeSummary = `${labels[0]} and ${labels[1]}`;
+  } else if (labels.length > 2) {
+    changeSummary =
+      `${labels.slice(0, -1).join(', ')}, and ${labels.at(-1)}`;
+  }
+
+  return (
+    `${changeSummary[0].toUpperCase()}${changeSummary.slice(1)} ` +
+    `updated on “${title}”.`
+  );
 }
 
 /**
@@ -276,48 +267,19 @@ async function checkForNewData() {
       return;
     }
 
-    const previousUpdateIdSet = new Set(previousLiveUpdateIds);
-    const addedIds = currentUpdateIds.filter(
-      (id) => !previousUpdateIdSet.has(id),
+    // The API does not define an order for updates.items. Compare membership
+    // so harmless reordering does not look like dozens of new changes.
+    const previousUpdateIds = new Set(previousLiveUpdateIds);
+    const newlyReportedIds = currentUpdateIds.filter(
+      (id) => !previousUpdateIds.has(id),
     );
-    const didSnapshotChange =
-      currentUpdateIds.length !== previousLiveUpdateIds.length ||
-      currentUpdateIds.some(
-        (id, index) => id !== previousLiveUpdateIds[index],
-      );
+    const changedPosts =
+      await refreshChangedLoadedPosts(newlyReportedIds);
 
-    if (!didSnapshotChange) {
-      markLiveUpdatesAvailable();
-      return;
-    }
+    changedPosts.forEach((changedPost) => {
+      showNotification(createLiveUpdateMessage(changedPost));
+    });
 
-    const changedUpdateIds = findChangedUpdateIds(
-      previousLiveUpdateIds,
-      currentUpdateIds,
-    );
-    const { changedPosts, refreshedPosts } =
-      await refreshChangedLoadedPosts(changedUpdateIds);
-
-    const postsToName =
-      addedIds.length > 0
-        ? refreshedPosts.filter(
-            (post) =>
-              addedIds.includes(post.id) ||
-              changedPosts.some(
-                (changedPost) => changedPost.id === post.id,
-              ),
-          )
-        : changedPosts;
-    const reportedChangeIds = [
-      ...new Set([
-        ...addedIds,
-        ...changedPosts.map((post) => post.id),
-      ]),
-    ];
-
-    showNotification(
-      createLiveUpdateMessage(reportedChangeIds, postsToName),
-    );
     previousLiveUpdateIds = currentUpdateIds;
     markLiveUpdatesAvailable();
   } catch (error) {

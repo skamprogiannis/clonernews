@@ -87,12 +87,16 @@ class FakeElement {
 
 function createFakeDocument() {
   const notificationArea = new FakeElement('section');
+  const liveBoard = new FakeElement('aside');
+  const emptyState = new FakeElement('p');
   const liveIndicator = new FakeElement();
   const liveText = new FakeElement('span');
   liveText.className = 'live-text';
   liveIndicator.append(liveText);
+  liveBoard.append(emptyState);
 
   const elements = new Map([
+    ['live-empty-state', emptyState],
     ['live-indicator', liveIndicator],
     ['live-notification-area', notificationArea],
   ]);
@@ -100,6 +104,7 @@ function createFakeDocument() {
   return {
     addEventListener() {},
     createElement: (tagName) => new FakeElement(tagName),
+    emptyState,
     getElementById: (id) => elements.get(id) ?? null,
     liveIndicator,
     notificationArea,
@@ -221,7 +226,7 @@ test('Ask and Show feeds use their Hacker News endpoints', async () => {
   assert.match(requestedUrls[1], /\/showstories\.json$/);
 });
 
-test('the initial live check is silent and a later change is announced once', async () => {
+test('unrelated live item changes do not create noisy notifications', async () => {
   const updateResponses = [
     { items: [100], profiles: [] },
     { items: [101, 100], profiles: [] },
@@ -241,23 +246,19 @@ test('the initial live check is silent and a later change is announced once', as
   assert.equal(document.notificationArea.childElementCount, 0);
 
   await context.checkForNewData();
-  assert.equal(document.notificationArea.childElementCount, 1);
-  assert.match(
-    document.notificationArea.children[0].children[1].textContent,
-    /1 item changed/,
-  );
+  assert.equal(document.notificationArea.childElementCount, 0);
 
   await context.checkForNewData();
-  assert.equal(document.notificationArea.childElementCount, 1);
+  assert.equal(document.notificationArea.childElementCount, 0);
 });
 
-test('a changed loaded post is force-refreshed and named in the notification', async () => {
+test('a changed loaded post is force-refreshed and described by name', async () => {
   const updateResponses = [
     { items: [200], profiles: [] },
     { items: [201, 200], profiles: [] },
   ];
   const itemResponses = [
-    { id: 201, score: 10, title: 'Cached title' },
+    { id: 201, score: 10, title: 'Fresh title' },
     { id: 201, score: 15, title: 'Fresh title' },
   ];
   let updateResponseIndex = 0;
@@ -278,7 +279,7 @@ test('a changed loaded post is force-refreshed and named in the notification', a
     return successfulJsonResponse({ ...response });
   });
 
-  const loadedPost = { id: 201, score: 10, title: 'Cached title' };
+  const loadedPost = { id: 201, score: 10, title: 'Fresh title' };
   context.loadedPosts.push(loadedPost);
   await context.fetchItemDetails(201);
 
@@ -290,8 +291,46 @@ test('a changed loaded post is force-refreshed and named in the notification', a
   assert.equal(loadedPost.title, 'Fresh title');
   assert.match(
     document.notificationArea.children[0].children[1].textContent,
-    /Fresh title/,
+    /^Score updated on “Fresh title”\.$/,
   );
+});
+
+test('a reported loaded post stays silent when its data is unchanged', async () => {
+  const updateResponses = [
+    { items: [200], profiles: [] },
+    { items: [201, 200], profiles: [] },
+  ];
+  let updateResponseIndex = 0;
+  let itemRequestCount = 0;
+
+  const { context, document } = loadLiveData(async (url) => {
+    if (url.endsWith('/updates.json')) {
+      const response = updateResponses[updateResponseIndex];
+      updateResponseIndex += 1;
+      return successfulJsonResponse(response);
+    }
+
+    itemRequestCount += 1;
+    return successfulJsonResponse({
+      id: 201,
+      score: 10,
+      title: 'Still the same',
+      type: 'story',
+    });
+  });
+
+  context.loadedPosts.push({
+    id: 201,
+    score: 10,
+    title: 'Still the same',
+    type: 'story',
+  });
+
+  await context.checkForNewData();
+  await context.checkForNewData();
+
+  assert.equal(itemRequestCount, 1);
+  assert.equal(document.notificationArea.childElementCount, 0);
 });
 
 test('the live timer starts once and does not overlap an active check', async () => {
@@ -332,6 +371,8 @@ test('the page exposes the live region and loads scripts in dependency order', (
   const liveScriptIndex = html.indexOf('src="js/live-updates.js"');
 
   assert.match(html, /id="live-notification-area"/);
+  assert.match(html, /id="live-empty-state"/);
+  assert.match(html, /Watching loaded posts for Hacker News changes/);
   assert.match(html, /aria-live="polite"/);
   assert.match(html, /aria-label="Live Hacker News updates"/);
   assert.notEqual(apiScriptIndex, -1);
@@ -350,6 +391,10 @@ test('live notifications include offline and reduced-motion styles', () => {
   assert.match(
     css,
     /@media \(max-width: 600px\)[\s\S]*\.live-notification[\s\S]*flex-direction: column/,
+  );
+  assert.match(
+    css,
+    /@media screen and \(max-width: 1024px\)[\s\S]*\.live-board\s*\{[\s\S]*order: -1/,
   );
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
 });
@@ -390,48 +435,49 @@ test('repeated live failures report once until a successful recovery', async () 
   assert.equal(errors.length, 2);
 });
 
-test('a loaded post changing when update IDs reorder is announced', async () => {
+test('reordering update IDs alone does not refresh or notify', async () => {
   const updateResponses = [
     { items: [200, 201], profiles: [] },
     { items: [201, 200], profiles: [] },
   ];
-  const itemResponses = [
-    { id: 201, score: 10, title: 'Before repeat update' },
-    { id: 201, score: 11, title: 'After repeat update' },
-  ];
-  let itemResponseIndex = 0;
+  let itemRequestCount = 0;
   let updateResponseIndex = 0;
 
-  const { context, document } = loadLiveData(async (url) => {
-    if (url.endsWith('/updates.json')) {
-      const response = updateResponses[updateResponseIndex];
-      updateResponseIndex += 1;
-      return successfulJsonResponse(response);
-    }
+  const { context, document } = loadLiveData(
+    async (url) => {
+      if (url.endsWith('/updates.json')) {
+        const response = updateResponses[updateResponseIndex];
+        updateResponseIndex += 1;
+        return successfulJsonResponse(response);
+      }
 
-    const response = itemResponses[itemResponseIndex];
-    itemResponseIndex += 1;
-    return successfulJsonResponse({ ...response });
-  });
+      itemRequestCount += 1;
+      return successfulJsonResponse({
+        id: 201,
+        score: 11,
+        title: 'Should not be requested',
+      });
+    },
+    {
+      consoleImplementation: {
+        error() {},
+      },
+    },
+  );
 
   const loadedPost = {
     id: 201,
     score: 10,
-    title: 'Before repeat update',
+    title: 'Unchanged post',
   };
   context.loadedPosts.push(loadedPost);
-  await context.fetchItemDetails(201);
 
   await context.checkForNewData();
   await context.checkForNewData();
 
-  assert.equal(itemResponseIndex, 2);
-  assert.equal(loadedPost.score, 11);
-  assert.equal(document.notificationArea.childElementCount, 1);
-  assert.match(
-    document.notificationArea.children[0].children[1].textContent,
-    /After repeat update/,
-  );
+  assert.equal(itemRequestCount, 0);
+  assert.equal(loadedPost.score, 10);
+  assert.equal(document.notificationArea.childElementCount, 0);
 });
 
 test('an unchanged update snapshot does not refetch loaded posts', async () => {
@@ -586,7 +632,7 @@ test('a multi-post refresh applies no partial state before retry succeeds', asyn
 
   assert.equal(firstPost.title, 'Fresh 201');
   assert.equal(secondPost.title, 'Fresh 202');
-  assert.equal(document.notificationArea.childElementCount, 1);
+  assert.equal(document.notificationArea.childElementCount, 2);
 });
 
 test('inserting one update ID does not refetch unchanged loaded posts', async () => {
@@ -666,10 +712,10 @@ test('refreshing a loaded post removes API fields absent from fresh data', async
   assert.ok(!Object.hasOwn(loadedPost, 'title'));
 });
 
-test('the aggregate count includes new IDs and changed loaded posts', async () => {
+test('each changed loaded post gets a specific notification', async () => {
   const updateResponses = [
-    { items: [200, 202], profiles: [] },
-    { items: [202, 201, 200], profiles: [] },
+    { items: [200], profiles: [] },
+    { items: [201, 202, 200], profiles: [] },
   ];
   let updateResponseIndex = 0;
 
@@ -680,28 +726,44 @@ test('the aggregate count includes new IDs and changed loaded posts', async () =
       return successfulJsonResponse(response);
     }
 
+    const id = Number(url.match(/\/item\/(\d+)\.json$/)[1]);
+
     return successfulJsonResponse({
-      id: 202,
-      score: 11,
-      title: 'Existing post changed',
+      id,
+      kids: id === 201 ? [301, 302] : undefined,
+      score: id === 201 ? 11 : 21,
+      title: `Fresh ${id}`,
       type: 'story',
     });
   });
 
-  context.loadedPosts.push({
-    id: 202,
-    score: 10,
-    title: 'Existing post before change',
-    type: 'story',
-  });
-
-  await context.checkForNewData();
-  await context.checkForNewData();
-
-  assert.match(
-    document.notificationArea.children[0].children[1].textContent,
-    /2 items changed/,
+  context.loadedPosts.push(
+    {
+      id: 201,
+      kids: [301],
+      score: 10,
+      title: 'Stale 201',
+      type: 'story',
+    },
+    {
+      id: 202,
+      score: 20,
+      title: 'Stale 202',
+      type: 'story',
+    },
   );
+
+  await context.checkForNewData();
+  await context.checkForNewData();
+
+  assert.equal(document.notificationArea.childElementCount, 2);
+  const messages = document.notificationArea.children.map(
+    (notification) => notification.children[1].textContent,
+  );
+  assert.ok(
+    messages.includes('Comments, score, and details updated on “Fresh 201”.'),
+  );
+  assert.ok(messages.includes('Score and details updated on “Fresh 202”.'));
 });
 
 test('a malformed update response does not replace the last valid snapshot', async () => {
@@ -743,6 +805,7 @@ test('only the five newest live notifications remain visible', () => {
     context.showNotification(`Update ${index}`);
   }
 
+  assert.equal(document.emptyState.parentElement, null);
   assert.equal(document.notificationArea.childElementCount, 5);
   assert.equal(
     document.notificationArea.children[0].children[1].textContent,

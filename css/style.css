@@ -407,6 +407,12 @@ body {
   padding-bottom: 10px;
 }
 
+.live-empty-state {
+  color: #a7abb4;
+  line-height: 1.5;
+  margin: 0;
+}
+
 #live-notification-area {
   display: grid;
   gap: 10px;
@@ -474,6 +480,7 @@ body {
 
   .live-board {
     min-width: 0;
+    order: -1;
     width: 100%;
     position: static;
     max-height: none;

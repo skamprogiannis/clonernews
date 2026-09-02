@@ -1,0 +1,12 @@
+{
+  "name": "clonernews",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A dependency-free Hacker News client with lazy feeds and live updates.",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

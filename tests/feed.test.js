@@ -154,8 +154,12 @@ function loadScript(fileName, contextValues = {}) {
   return loadScripts([fileName], contextValues);
 }
 
+function loadRenderingScripts(fileNames, contextValues = {}) {
+  return loadScripts(['render-text.js', ...fileNames], contextValues);
+}
+
 test('renderPosts displays posts from newest to oldest', () => {
-  const { context, document } = loadScript('Render.js');
+  const { context, document } = loadRenderingScripts(['Render.js']);
 
   context.renderPosts([
     { by: 'older', id: 1, time: 100, title: 'Older', type: 'story' },
@@ -168,12 +172,29 @@ test('renderPosts displays posts from newest to oldest', () => {
   );
 });
 
+test('renderPosts never assigns API markup directly to the rendered page', () => {
+  const { context, document } = loadRenderingScripts(['Render.js']);
+
+  context.renderPosts([
+    {
+      id: 1,
+      text: '<img src=x onerror=alert(1)>Safe text',
+      time: 100,
+      title: 'Markup example',
+      type: 'story',
+    },
+  ]);
+
+  const body = document.postsContainer.querySelector('.post-text');
+  assert.equal(body.textContent, '<img src=x onerror=alert(1)>Safe text');
+});
+
 test('renderComments shows newest direct comments under their parent post', () => {
   const document = createFakeDocument();
   const commentsSection = document.createElement('section');
   commentsSection.id = 'comments-42';
   document.postsContainer.append(commentsSection);
-  const { context } = loadScript('RenderCom.js', { document });
+  const { context } = loadRenderingScripts(['RenderCom.js'], { document });
 
   context.renderComments(
     [
@@ -369,7 +390,7 @@ test('a slower previous filter request cannot replace the selected feed', async 
 test('opening a post loads its direct comments once and renders them below it', async () => {
   const requestedItems = [];
   const document = createFakeDocument();
-  const { context } = loadScripts(['RenderCom.js', 'Render.js'], {
+  const { context } = loadRenderingScripts(['RenderCom.js', 'Render.js'], {
     document,
     fetchItemDetails: async (id) => {
       requestedItems.push(id);
@@ -413,7 +434,7 @@ test('opening a post loads its direct comments once and renders them below it', 
 test('opening a poll loads and displays its choices', async () => {
   const requestedItems = [];
   const document = createFakeDocument();
-  const { context } = loadScripts(['RenderCom.js', 'Render.js'], {
+  const { context } = loadRenderingScripts(['RenderCom.js', 'Render.js'], {
     document,
     fetchItemDetails: async (id) => {
       requestedItems.push(id);
@@ -458,7 +479,7 @@ test('a comment loads nested replies below the correct parent only once', async 
   commentsSection.id = 'comments-42';
   document.postsContainer.append(commentsSection);
 
-  const { context } = loadScript('RenderCom.js', {
+  const { context } = loadRenderingScripts(['RenderCom.js'], {
     document,
     fetchItemDetails: async (id) => {
       requestedItems.push(id);

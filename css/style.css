@@ -114,6 +114,11 @@ body {
   background-size: 100% 1px;
 }
 
+#menu ul li a.active-page {
+  color: rgba(255,255,255,0.9);
+  background-size: 100% 1px;
+}
+
 #main{
   background: linear-gradient(135deg, #16171b 0%, #070708 100%);
   min-height: 1000px;
@@ -308,6 +313,23 @@ body {
   color: rgba(255, 255, 255, 0.9);
   font-size: 16px;
   line-height: 1.6;
+}
+
+.post-text p + p,
+.comment-text p + p {
+  margin-top: 1em;
+}
+
+.post-text a,
+.comment-text a {
+  color: #ffad73;
+}
+
+.post-text pre,
+.comment-text pre {
+  margin-top: 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
 }
 
 

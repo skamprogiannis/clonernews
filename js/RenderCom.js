@@ -27,7 +27,7 @@ function renderComments(comments, parentId) {
     author.className = 'comment-author';
     author.textContent = comment.by || 'Anonymous';
     text.className = 'comment-text';
-    text.innerHTML = comment.text || '';
+    appendSafeHackerNewsMarkup(text, comment.text || '');
 
     commentBox.append(author, text);
 

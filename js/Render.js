@@ -47,7 +47,10 @@ async function togglePost(
 
         listItem.className = 'poll-option';
         listItem.dataset.pollOptionId = String(option.id);
-        listItem.innerHTML = option.text || `Poll choice ${option.id}`;
+        appendSafeHackerNewsMarkup(
+          listItem,
+          option.text || `Poll choice ${option.id}`,
+        );
         score.textContent = ` — ${option.score ?? 0} votes`;
         listItem.append(score);
         pollOptionsContainer.append(listItem);
@@ -128,7 +131,7 @@ function renderPosts(posts) {
       const body = document.createElement('div');
 
       body.className = 'post-text';
-      body.innerHTML = post.text;
+      appendSafeHackerNewsMarkup(body, post.text);
       details.append(body);
     }
 

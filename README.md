@@ -4,6 +4,8 @@ A dependency-free Hacker News client built with HTML, CSS, and vanilla
 JavaScript. It combines lazily loaded feeds, expandable discussions, polls,
 and meaningful live-update notifications in one responsive interface.
 
+**[Live demo](https://skamprogiannis.github.io/clonernews/)** · **[CI](https://github.com/skamprogiannis/clonernews/actions/workflows/ci.yml)**
+
 ## Highlights
 
 - Browses new stories, jobs, polls, Ask HN, and Show HN posts.
